@@ -9,7 +9,25 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+//token function
+const verifyJWT = (req, res, next) =>{
+    const authHeader = req.headers.authorization;
+    console.log('inside verify token', authHeader);
+    if (!authHeader) {
+        res.status(401).send({message: 'unauthorized! not found token'});
+    }
+    //convert
+    const token = authHeader.split(' ')[1];
 
+    // verifying user token
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
+        if (err) {
+            return res.status(403).send({message:'Forbidden! something wrong with your token'})
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
 
 //log 
 app.get('/', (req,res)=>{
@@ -37,8 +55,7 @@ app.post('/login', (req, res)=>{
 })
 
 // GET TOKEN 
-app.get('/orders', (req, res)=>{
-    console.log(req.headers.authorization);
+app.get('/orders', verifyJWT, (req, res)=>{
     res.send([{id:1, item:'chicken'}, {id:2, item: 'meals'}])
 })
 
